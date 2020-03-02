@@ -1,5 +1,5 @@
-import connect from './connect'
-import Provider from './provider'
+import connect from './components/connect'
+import Provider from './components/provider'
 
 export default {
   connect,

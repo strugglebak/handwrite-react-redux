@@ -19,16 +19,12 @@
  */
 
 import React, {Component} from 'react'
-import PropTypes from 'prop-types'
+import storeShapes from '../utils/storeShapes'
 
 export default class Provider extends Component {
   // 构建 childContextTypes 验证器
   static childContextTypes = {
-    store: PropTypes.shape({
-      subscribe: PropTypes.func.isRequired,
-      dispatch: PropTypes.func.isRequired,
-      getState: PropTypes.func.isRequired,
-    }).isRequired
+    store: storeShapes
   }
 
   constructor(props) {

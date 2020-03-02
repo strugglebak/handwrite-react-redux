@@ -17,11 +17,42 @@
  * - mapDispatchToProps
  *
  * mapStateToProps 表示该组件需要的状态，mapDispatchToProps 表示对该组件状态的增/删/改的动作
+ *
+ * 而由于组件的状态以及动作不能够直接获取到，所以需要将 mapStateToProps 和 mapDispatchToProps 定义为函数
+ * 以方便 connect 能够在内部访问到 store 以及 store.dispatch
  */
 import React, {Component} from 'react'
-import PropTypes from 'prop-types'
+import storeShapes from '../utils/storeShapes'
+import {bindActionCreators} from 'redux'
+
+/**
+ * mapStateToProps 默认不关联 state，其默认值为 state => ({})
+ * mapDispatchToProps 默认将 store.dispatch 方法作为属性传递给包装的属性，其默认值为 dispatch => ({dispatch})
+ */
+
+const defaultMapStateToProps = state => ({})
+const defaultMapDispatchToProps = dispatch => ({dispatch})
+
+// const mapStateToProps = (state, ownProps) => {
+//   return {
+//     prop: state.prop
+//   }
+// }
+
+// const mapDispatchToProps = (dispatch, ownProps) => {
+//   return {
+//     dispatch1: () => {
+//       dispatch(actionCreator)
+//     }
+//   }
+// }
 
 export default function connect(mapStateToProps, mapDispatchToProps) {
+
+  // 默认值设定
+  mapStateToProps = mapStateToProps || defaultMapStateToProps
+  mapDispatchToProps = mapDispatchToProps || defaultMapDispatchToProps
+
   // 对于 connect 而言，其返回值是一个组件
   // 对于下面的 Connect Class 而言，其传入的参数是一个原始组件
   return function wrapWithConnect(WrappedComponent) {
@@ -29,11 +60,7 @@ export default function connect(mapStateToProps, mapDispatchToProps) {
     return class Connect extends Component {
       // 构建 childContextTypes 验证器
       static childContextTypes = {
-        store: PropTypes.shape({
-          subscribe: PropTypes.func.isRequired,
-          dispatch: PropTypes.func.isRequired,
-          getState: PropTypes.func.isRequired,
-        }).isRequired
+        store: storeShapes
       }
 
       constructor(props, context) {
@@ -42,13 +69,37 @@ export default function connect(mapStateToProps, mapDispatchToProps) {
         this.store = context.store // 注意这里是从 context 中获取的 store，这里先尝试使用旧 API 解决问题
 
         // 初始化状态和动作
-        this.state = mapStateToProps(store.getState())
-        this.mappedDispatch = mapDispatchToProps(store.dispatch)
+        this.state = mapStateToProps(this.store.getState(), this.props)
+        /**
+         * 传进来的 mapDispatchToProps 也许是个对象，这个时候你可能就要这样子定义 mapDispatchToProps
+         *
+         import actions from '../store/actions/counter'
+         const mapDispatchToProps = (dispatch, ownProps) => ({
+          add: (num) => {
+            dispatch(actions.add(num))
+          },
+          minus: (num) => {
+            dispatch(actions.minus(num))
+          }
+         })
+
+         * 但是这样调用太麻烦了，能不能优化成如下定义
+         import actions from '../store/actions/counter'
+         const mapDispatchToProps = {
+           add: actions.add,
+           minus: actions.minus
+         }
+
+         * 所以这个时候就要用到 redux 的 bindActionCreators 了
+         */
+        this.mappedDispatch = typeof mapDispatchToProps === 'function'
+          ? mapDispatchToProps(store.dispatch, this.props)
+          : bindActionCreators(mapDispatchToProps, this.store.dispatch)
       }
 
       componentDidMount() {
         this.unsub = store.subscribe(() => {
-          const mappedState = mapStateToProps(store.getState())
+          const mappedState = mapStateToProps(this.store.getState())
           this.setState(mappedState)
         })
       }
