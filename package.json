@@ -1,0 +1,13 @@
+{
+  "name": "react-redux",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/strugglebak/react-redux.git",
+  "author": "strugglebak <strugglebak@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "prop-types": "^15.7.2",
+    "react": "^16.13.0",
+    "react-dom": "^16.13.0"
+  }
+}
