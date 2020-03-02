@@ -20,8 +20,17 @@
  */
 import React, {useContext, useReducer, useEffect} from 'react'
 import ReactReduxContext from './context'
+import { bindActionCreators } from 'redux'
+
+const defaultMapStateToProps = state => ({})
+const defaultMapDispatchToProps = dispatch => ({dispatch})
 
 export default function connect(mapStateToProps, mapDispatchToProps) {
+
+  // 默认值设定
+  mapStateToProps = mapStateToProps || defaultMapStateToProps
+  mapDispatchToProps = mapDispatchToProps || defaultMapDispatchToProps
+
   // 对于 connect 而言，其返回值是一个组件
   // 对于下面的 Connect Class 而言，其传入的参数是一个原始组件
   return function wrapWithConnect(WrappedComponent) {
@@ -30,18 +39,22 @@ export default function connect(mapStateToProps, mapDispatchToProps) {
       // 获取到从 Provider 传入的 store 以及 state
       const store = useContext(ReactReduxContext)
       const state = store.getState()
+      const mappedState = mapStateToProps(state, props)
       // 利用 useReducer 获取到强制组件更新的 dispatch 函数
       const [, forceComponentUpdateDispatch] =
         useReducer(storeStateUpdatesReducer, null, () => [null, 0])
+
+      // 兼容 mapDispatchToProps 是函数或者是对象的情况
+      const mappedDispatch = typeof mapDispatchToProps === 'function'
+      ? mapDispatchToProps(store.dispatch, props)
+      : bindActionCreators(mapDispatchToProps, store.dispatch)
 
       // 订阅行为在 useEffect 中
       useEffect(() => {
         const unSubscribe = store.subscribe(() => {
           forceComponentUpdateDispatch({
             type: '@@redux/STORE_UPDATED',
-            payload: {
-              latestStoreState: state,
-            }
+            payload: { latestStoreState: state, }
           })
         })
 
@@ -54,8 +67,8 @@ export default function connect(mapStateToProps, mapDispatchToProps) {
       return (
         <WrappedComponent
           {...props}
-          {...mapStateToProps(state, props)}
-          {...mapDispatchToProps(store.dispatch, props)}
+          {...mappedState}
+          {...mappedDispatch}
         ></WrappedComponent>
       )
     }
