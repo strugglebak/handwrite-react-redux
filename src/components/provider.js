@@ -18,25 +18,13 @@
  * 子组件只需要访问 context 即可得到其传入的 store
  */
 
-import React, {Component} from 'react'
-import storeShapes from '../utils/storeShapes'
+import React from 'react'
+import ReactReduxContext from './context'
 
-export default class Provider extends Component {
-  // 构建 childContextTypes 验证器
-  static childContextTypes = {
-    store: storeShapes
-  }
-
-  constructor(props) {
-    super(props)
-    this.store = props.store // 这里传入 store
-  }
-
-  getChildContext() {
-    return { store: this.store }
-  }
-
-  render() {
-    return this.props.children
-  }
+export function Provider({ store, children }) {
+  return (
+    <ReactReduxContext.Provider value={store}>
+      {children}
+    </ReactReduxContext.Provider>
+  )
 }
